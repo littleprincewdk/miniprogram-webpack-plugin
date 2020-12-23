@@ -1,0 +1,15 @@
+{
+  "root": true,
+  "parser": "babel-eslint",
+  "plugins": ["prettier"],
+  "extends": ["airbnb-base", "prettier"],
+  "rules": {
+    "prettier/prettier": "error",
+
+    "no-console": "off",
+    "no-restricted-syntax": "off",
+    "global-require": "off",
+
+    "import/no-extraneous-dependencies": "off"
+  }
+}
