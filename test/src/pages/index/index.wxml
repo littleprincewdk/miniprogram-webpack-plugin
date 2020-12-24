@@ -1,11 +1,13 @@
-<!--index.wxml-->
 <view class="container">
-  <view  bindtap="bindViewTap" class="userinfo">
-    <image class="userinfo-avatar" src="{{userInfo.avatarUrl}}" background-size="cover"></image>
-    <text class="userinfo-nickname">{{userInfo.nickName}}</text>
-  </view>
+  <button class="userinfo" open-type="getUserInfo" bindgetuserinfo="onGetUserinfo">
+    <block wx:if="{{userInfo}}">
+      <image class="userinfo-avatar" src="{{userInfo.avatarUrl}}" />
+      <text class="userinfo-nickname">{{userInfo.nickName}}</text>
+    </block>
+    <button wx:else>登录</button>
+  </button>
   <view class="usermotto">
     <text class="user-motto">{{motto}}</text>
-    <view bindtap="goToSubList">go to subPackages</view>
   </view>
+  <view bindtap="goToSubList">go to subPackages</view>
 </view>

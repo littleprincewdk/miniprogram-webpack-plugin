@@ -61,6 +61,10 @@ function stripExt(path) {
 exports.stripExt = stripExt;
 
 function addChunksToAsset(asset, chunks) {
+  if (!chunks.length) {
+    return asset;
+  }
+
   const source = new ConcatSource();
   chunks.forEach(chunk => {
     source.add(`require('./${chunk}');\n`);

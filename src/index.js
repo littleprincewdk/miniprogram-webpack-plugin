@@ -3,6 +3,7 @@
 const path = require('path');
 const defaults = require('lodash/defaults');
 const EntryDependency = require('webpack/lib/dependencies/EntryDependency');
+const { merge } = require('webpack-merge');
 const {
   NODE_MODULES_REG,
   fsExists,
@@ -64,10 +65,10 @@ module.exports = class MiniprogramWebpackPlugin {
     this.appEntry = this.getAppEntry(compiler);
     this.projectConfigPath = path.join(compiler.context, 'project.config.json');
     this.compiler = compiler;
-    compiler.hooks.entryOption.tap(PLUGIN_NAME, () => {
-      this.startup();
-      this.applyOption();
-    });
+
+    this.startup();
+    this.splitSubPackagesChunks();
+
     compiler.hooks.run.tapAsync(
       PLUGIN_NAME,
       this.tryAsync(async () => {
@@ -97,12 +98,25 @@ module.exports = class MiniprogramWebpackPlugin {
           }
           // TODO
           if (assetPath === 'app.js') {
-            assets[assetPath] = addChunksToAsset(assets[assetPath], [
-              'runtime',
-              'common',
-              'vendors',
-            ]);
+            const chunks = ['runtime', 'vendors', 'common'];
+            assets[assetPath] = addChunksToAsset(
+              assets[assetPath],
+              chunks.filter(chunk => assets[`${chunk}.js`]),
+            );
           }
+        });
+        const { subpackages, subPackages = subpackages } = this.appConfig;
+        subPackages.forEach(item => {
+          const chunks = [`${item.root.replace('/', '-')}-common`];
+          item.pages.forEach(page => {
+            const assetPath = `${item.root}/${page}.js`;
+            if (assets[assetPath]) {
+              assets[assetPath] = addChunksToAsset(
+                assets[assetPath],
+                chunks.filter(chunk => assets[`${item.root}/${chunk}.js`]),
+              );
+            }
+          });
         });
       });
     });
@@ -124,18 +138,59 @@ module.exports = class MiniprogramWebpackPlugin {
     this.tabBarIcons.forEach(icon => {
       options.entry.app.import.push(`./${icon}`);
     });
+
+    options.optimization = merge(options.optimization, {
+      runtimeChunk: { name: 'runtime' },
+      splitChunks: {
+        maxInitialRequests: Infinity,
+        minSize: 0,
+        cacheGroups: {
+          common: {
+            name: 'common',
+            minChunks: 2,
+            priority: 1,
+            chunks: 'all',
+          },
+          vendors: {
+            name: 'vendors',
+            minChunks: 1,
+            test: module => {
+              return /[\\/]node_modules[\\/]/.test(module.resource);
+            },
+            priority: 1,
+            chunks: 'all',
+          },
+        },
+      },
+    });
   }
 
   startup() {
     this.getAppConfig();
     this.getProjectConfig();
     this.getTabBarIcons();
+    this.applyOption();
   }
 
   async run() {
     await this.getPages();
     this.getSubPackages();
     await this.getComponents();
+  }
+
+  splitSubPackagesChunks() {
+    const { subpackages, subPackages = subpackages } = this.appConfig;
+    subPackages.forEach(item => {
+      const commonChunkName = item.root.replace('/', '-');
+      this.compiler.options.optimization.splitChunks.cacheGroups[commonChunkName] = {
+        name: `${item.root}/${commonChunkName}-common`,
+        minChunks: 2,
+        priority: 10,
+        chunks(chunk) {
+          return chunk.name.includes(item.root);
+        },
+      };
+    });
   }
 
   getAppEntry(compiler) {
@@ -241,7 +296,8 @@ module.exports = class MiniprogramWebpackPlugin {
   }
 
   getSubPackages() {
-    const subPackages = this.appConfig.subPackages || this.appConfig.subpackages;
+    const { subpackages, subPackages = subpackages } = this.appConfig;
+
     if (subPackages && subPackages.length) {
       subPackages.forEach(item => {
         if (item.pages && item.pages.length) {

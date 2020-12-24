@@ -75,29 +75,6 @@ module.exports = {
       },
     ],
   },
-  optimization: {
-    runtimeChunk: 'single',
-    splitChunks: {
-      chunks: 'all',
-      maxInitialRequests: Infinity,
-      minSize: 0,
-      cacheGroups: {
-        common: {
-          name: 'common',
-          minChunks: 2,
-          priority: 1,
-        },
-        vendors: {
-          name: 'vendors',
-          minChunks: 1,
-          test: module => {
-            return /[\\/]node_modules[\\/]/.test(module.resource);
-          },
-          priority: 10,
-        },
-      },
-    },
-  },
   plugins: [
     new CleanWebpackPlugin(),
     new MiniprogramWebpackPlugin(),

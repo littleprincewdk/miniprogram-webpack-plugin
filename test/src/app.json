@@ -16,7 +16,7 @@
       "text": "日志"
     }]
   },
-  "subPackages": [
+  "subpackages": [
     {
       "root": "pages/product",
       "pages": [

@@ -4,6 +4,10 @@ import { formatTime } from './utils/util';
 console.log(isObject(null));
 
 App({
+  globalData: {
+    userInfo: null,
+  },
+
   onLaunch() {
     // 调用API从本地缓存中获取数据
     const logs = wx.getStorageSync('logs') || [];
@@ -12,6 +16,7 @@ App({
 
     formatTime(new Date());
   },
+
   getUserInfo(cb) {
     if (this.globalData.userInfo) {
       if (typeof cb === 'function') {
@@ -38,8 +43,5 @@ App({
         },
       });
     }
-  },
-  globalData: {
-    userInfo: null,
   },
 });

@@ -1,7 +1,8 @@
 import { formatTime } from '../../utils/util';
 import avatar from '../../images/avatar.png';
+import { A } from './consts';
 
-console.log(avatar);
+console.log(avatar, A);
 
 Page({
   data: {
