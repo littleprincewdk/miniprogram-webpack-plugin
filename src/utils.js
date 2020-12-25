@@ -16,6 +16,17 @@ function fsExists(filepath) {
 
 exports.fsExists = fsExists;
 
+function fsExistsSync(filepath) {
+  try {
+    fs.accessSync(filepath, fs.constants.F_OK);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+exports.fsExistsSync = fsExistsSync;
+
 function readConfig(configPath) {
   return new Promise((resolve, reject) => {
     fs.access(configPath, fs.constants.F_OK, async err => {

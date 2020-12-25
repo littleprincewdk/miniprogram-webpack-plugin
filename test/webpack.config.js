@@ -22,7 +22,7 @@ module.exports = {
   mode: 'development',
   context: path.resolve(__dirname, 'src'),
   entry: {
-    app: './app.js',
+    app: './app.ts',
   },
   output: {
     filename: '[name].js',
@@ -33,6 +33,11 @@ module.exports = {
   devtool: 'source-map',
   module: {
     rules: [
+      {
+        test: /\.ts?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
       {
         test: /\.wxml$/,
         use: [
@@ -46,6 +51,18 @@ module.exports = {
       },
       {
         test: /\.wxss$/,
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: 'css-loader',
+            options: {
+              import: false,
+            },
+          },
+        ],
+      },
+      {
+        test: /\.less$/,
         use: [
           MiniCssExtractPlugin.loader,
           {
@@ -75,9 +92,16 @@ module.exports = {
       },
     ],
   },
+  resolve: {
+    extensions: ['.ts', '.js'],
+  },
   plugins: [
     new CleanWebpackPlugin(),
-    new MiniprogramWebpackPlugin(),
+    new MiniprogramWebpackPlugin({
+      extensions: {
+        style: ['.less', '.wxss'],
+      },
+    }),
     new MiniCssExtractPlugin({
       filename: '[name]',
     }),

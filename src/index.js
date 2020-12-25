@@ -7,6 +7,7 @@ const { merge } = require('webpack-merge');
 const {
   NODE_MODULES_REG,
   fsExists,
+  fsExistsSync,
   readConfig,
   readConfigSync,
   isEmptyObject,
@@ -28,7 +29,7 @@ module.exports = class MiniprogramWebpackPlugin {
    * interface Page {
    *   name: string;
    *   path: string;
-   *   scriptExt: '.js' | '.ts',
+   *   config: Record<string, any>
    * }
    */
   pages = new Map();
@@ -37,7 +38,7 @@ module.exports = class MiniprogramWebpackPlugin {
    * interface Component {
    *   name: string;
    *   path: string;
-   *   scriptExt: '.js' | '.ts',
+   *   config: Record<string, any>
    * }
    */
   components = new Map();
@@ -45,10 +46,16 @@ module.exports = class MiniprogramWebpackPlugin {
   tabBarIcons = new Set();
 
   constructor(options = {}) {
-    this.options = defaults(options || {}, {
+    this.options = defaults(options, {
       sourceDir: '',
       outputDir: '',
       entryFileName: 'app',
+    });
+    this.options.extensions = defaults(this.options.extensions, {
+      script: ['.js'],
+      config: ['.json'],
+      template: ['.wxml'],
+      style: ['.wxss'],
     });
   }
 
@@ -87,37 +94,35 @@ module.exports = class MiniprogramWebpackPlugin {
         callback();
       });
       compilation.hooks.afterOptimizeAssets.tap(PLUGIN_NAME, assets => {
+        const { script, config, template, style } = this.options.extensions;
+
         Object.keys(assets).forEach(assetPath => {
-          const styleExt = '.wxss';
-          const templateExt = '.wxml';
-          if (new RegExp(`(\\${styleExt}|\\${templateExt})\\.js(\\.map)?$`).test(assetPath)) {
+          const extPattern = [...script, ...config, ...template, ...style]
+            .map(ext => `\\${ext}`)
+            .join('|');
+          if (new RegExp(`(${extPattern})\\.js(\\.map)?$`).test(assetPath)) {
             delete assets[assetPath];
           }
           if (/project\.config\.json\.js(\.map)?$/.test(assetPath)) {
             delete assets[assetPath];
           }
-          // TODO
-          if (assetPath === 'app.js') {
-            const chunks = ['runtime', 'vendors', 'common'];
-            assets[assetPath] = addChunksToAsset(
-              assets[assetPath],
-              chunks.filter(chunk => assets[`${chunk}.js`]),
-            );
+
+          const isAppEntry = script.find(
+            ext => `${this.options.entryFileName}${ext}` === assetPath,
+          );
+          if (isAppEntry) {
+            this.addChunksToAppEntry(assetPath, assets);
           }
         });
-        const { subpackages, subPackages = subpackages } = this.appConfig;
-        subPackages.forEach(item => {
-          const chunks = [`${item.root.replace('/', '-')}-common`];
-          item.pages.forEach(page => {
-            const assetPath = `${item.root}/${page}.js`;
-            if (assets[assetPath]) {
-              assets[assetPath] = addChunksToAsset(
-                assets[assetPath],
-                chunks.filter(chunk => assets[`${item.root}/${chunk}.js`]),
-              );
-            }
-          });
+
+        this.getAllComponents().forEach(([, component]) => {
+          this.adjustComponentExt(component, script, '.js', assets);
+          this.adjustComponentExt(component, config, '.json', assets);
+          this.adjustComponentExt(component, template, '.wxml', assets);
+          this.adjustComponentExt(component, style, '.wxss', assets);
         });
+
+        this.addChunksToSubPackage(assets);
       });
     });
     compiler.hooks.make.tapAsync(
@@ -274,23 +279,56 @@ module.exports = class MiniprogramWebpackPlugin {
     });
   }
 
+  getAllComponents() {
+    return [
+      [
+        this.appEntry,
+        {
+          path: this.appEntry,
+          name: this.options.entryFileName,
+          config: this.appConfig,
+        },
+      ],
+      ...this.pages,
+      ...this.components,
+    ];
+  }
+
   getConfigPath(filepath) {
+    const { config } = this.options.extensions;
     const parsedPath = path.parse(filepath);
-    parsedPath.ext = '.json';
+    const ext = config.find(extension => {
+      parsedPath.ext = extension;
+      parsedPath.base = parsedPath.name + parsedPath.ext;
+      return fsExistsSync(path.format(parsedPath));
+    });
+    parsedPath.ext = ext;
     parsedPath.base = parsedPath.name + parsedPath.ext;
     return path.format(parsedPath);
   }
 
   getTemplatePath(filepath) {
+    const { template } = this.options.extensions;
     const parsedPath = path.parse(filepath);
-    parsedPath.ext = '.wxml';
+    const ext = template.find(extension => {
+      parsedPath.ext = extension;
+      parsedPath.base = parsedPath.name + parsedPath.ext;
+      return fsExistsSync(path.format(parsedPath));
+    });
+    parsedPath.ext = ext;
     parsedPath.base = parsedPath.name + parsedPath.ext;
     return path.format(parsedPath);
   }
 
   getStylePath(filepath) {
+    const { style } = this.options.extensions;
     const parsedPath = path.parse(filepath);
-    parsedPath.ext = '.wxss';
+    const ext = style.find(extension => {
+      parsedPath.ext = extension;
+      parsedPath.base = parsedPath.name + parsedPath.ext;
+      return fsExistsSync(path.format(parsedPath));
+    });
+    parsedPath.ext = ext;
     parsedPath.base = parsedPath.name + parsedPath.ext;
     return path.format(parsedPath);
   }
@@ -308,7 +346,6 @@ module.exports = class MiniprogramWebpackPlugin {
               this.pages.set(pagePath, {
                 name: path.join(root, page),
                 path: pagePath,
-                scriptExt: '.js',
               });
             }
           });
@@ -357,7 +394,6 @@ module.exports = class MiniprogramWebpackPlugin {
         this.components.set(componentPath, {
           name: this.getComponentName(componentPath),
           path: componentPath,
-          scriptExt: '.js',
         });
       }
 
@@ -402,20 +438,9 @@ module.exports = class MiniprogramWebpackPlugin {
   }
 
   generateConfigFile(compilation) {
-    [
-      [
-        this.appEntry,
-        {
-          path: this.appEntry,
-          config: this.appConfig,
-        },
-      ],
-      ...this.pages,
-      ...this.components,
-    ].forEach(([, component]) => {
+    this.getAllComponents().forEach(([, component]) => {
       const stringifiedConfig = JSON.stringify(component.config, null, 2);
-      const name = this.getConfigPath(this.getComponentName(component.path));
-      compilation.assets[name] = {
+      compilation.assets[`${component.name}.json`] = {
         source: () => stringifiedConfig,
         size: () => stringifiedConfig.length,
       };
@@ -425,5 +450,41 @@ module.exports = class MiniprogramWebpackPlugin {
       source: () => stringifiedConfig,
       size: () => stringifiedConfig.length,
     };
+  }
+
+  adjustComponentExt(component, exts, defaultExt, assets) {
+    exts
+      .filter(ext => ext !== defaultExt)
+      .forEach(ext => {
+        const componentPath = component.name + ext;
+        if (assets[componentPath]) {
+          assets[`${component.name}${defaultExt}`] = assets[componentPath];
+          delete assets[componentPath];
+        }
+      });
+  }
+
+  addChunksToAppEntry(appEntry, assets) {
+    const chunks = ['runtime', 'vendors', 'common'];
+    assets[appEntry] = addChunksToAsset(
+      assets[appEntry],
+      chunks.filter(chunk => assets[`${chunk}.js`]),
+    );
+  }
+
+  addChunksToSubPackage(assets) {
+    const { subpackages, subPackages = subpackages } = this.appConfig;
+    subPackages.forEach(item => {
+      const chunks = [`${item.root.replace('/', '-')}-common`];
+      item.pages.forEach(page => {
+        const assetPath = `${item.root}/${page}.js`;
+        if (assets[assetPath]) {
+          assets[assetPath] = addChunksToAsset(
+            assets[assetPath],
+            chunks.filter(chunk => assets[`${item.root}/${chunk}.js`]),
+          );
+        }
+      });
+    });
   }
 };
