@@ -1,6 +1,5 @@
 const path = require('path');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const MiniprogramWebpackPlugin = require('../src');
 
 // function recursiveIssuer(m) {
@@ -47,12 +46,48 @@ module.exports = {
               name: '[path][name].[ext]',
             },
           },
+          {
+            loader: 'extract-loader',
+            options: {
+              publicPath: context => {
+                return '../'.repeat(
+                  path.relative(path.join(__dirname, 'src'), context.context).split('/').length,
+                );
+              },
+            },
+          },
+          {
+            loader: 'html-loader',
+            options: {
+              attributes: {
+                list: ['wxs', 'image', 'audio', 'video']
+                  .map(tag => ({
+                    tag,
+                    attribute: 'src',
+                    type: 'src',
+                  }))
+                  .concat([
+                    {
+                      tag: 'video',
+                      attribute: 'poster',
+                      type: 'src',
+                    },
+                  ]),
+              },
+            },
+          },
         ],
       },
       {
         test: /\.wxss$/,
         use: [
-          MiniCssExtractPlugin.loader,
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[path][name].[ext]',
+            },
+          },
+          'extract-loader',
           {
             loader: 'css-loader',
             options: {
@@ -64,7 +99,13 @@ module.exports = {
       {
         test: /\.less$/,
         use: [
-          MiniCssExtractPlugin.loader,
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[path][name].[ext]',
+            },
+          },
+          'extract-loader',
           {
             loader: 'css-loader',
             options: {
@@ -73,6 +114,17 @@ module.exports = {
             },
           },
           'less-loader',
+        ],
+      },
+      {
+        test: /\.wxs$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[path][name].[ext]',
+            },
+          },
         ],
       },
       {
@@ -101,9 +153,6 @@ module.exports = {
       extensions: {
         style: ['.less', '.wxss'],
       },
-    }),
-    new MiniCssExtractPlugin({
-      filename: '[name]',
     }),
   ],
 };

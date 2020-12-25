@@ -1,3 +1,4 @@
+<wxs module="utils" src="../../utils/util.wxs" />
 <view class="container">
   <button class="userinfo" open-type="getUserInfo" bindgetuserinfo="onGetUserinfo">
     <block wx:if="{{userInfo}}">
@@ -6,8 +7,9 @@
     </block>
     <button wx:else>登录</button>
   </button>
-  <view class="usermotto">
+  <view class="usermotto {{a > b ? a : b}}">
     <text class="user-motto">{{motto}}</text>
   </view>
-  <view bindtap="goToSubList">go to subPackages</view>
+  <button bindtap="goToSubList">go to subPackages</button>
+  <image src="../../images/webpack.png" style="width: 100px; height: 100px" mode="aspectFit" />
 </view>
