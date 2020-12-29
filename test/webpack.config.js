@@ -26,7 +26,7 @@ function extractLoader() {
 }
 
 module.exports = {
-  mode: 'development',
+  mode: process.env.NODE_ENV,
   context: path.resolve(__dirname, 'src'),
   entry: {
     app: './app.ts',
@@ -145,9 +145,11 @@ module.exports = {
   plugins: [
     new CleanWebpackPlugin(),
     new MiniprogramWebpackPlugin({
+      projectConfigPath: 'project.config.ts',
       extensions: {
-        style: ['.less', '.wxss'],
+        config: ['.config.ts', '.json'],
         // template: ['.wxml.ts', '.wxml'],
+        style: ['.less', '.wxss'],
       },
     }),
   ],

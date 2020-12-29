@@ -50,6 +50,7 @@ module.exports = class MiniprogramWebpackPlugin {
       sourceDir: '',
       outputDir: '',
       entryFileName: 'app',
+      projectConfigPath: 'project.config.ts',
     });
     this.options.extensions = defaults(this.options.extensions, {
       script: ['.js'],
@@ -70,7 +71,7 @@ module.exports = class MiniprogramWebpackPlugin {
 
   apply(compiler) {
     this.appEntry = this.getAppEntry(compiler);
-    this.projectConfigPath = path.join(compiler.context, 'project.config.json');
+    this.projectConfigPath = path.join(compiler.context, this.options.projectConfigPath);
     this.compiler = compiler;
 
     this.startup();

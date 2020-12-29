@@ -1,5 +1,6 @@
 const fs = require('fs-extra');
 const { ConcatSource } = require('webpack').sources;
+const { transformFileSync } = require('@babel/core');
 
 exports.NODE_MODULES_REG = /(.*)node_modules/;
 
@@ -43,7 +44,16 @@ exports.readConfig = readConfig;
 function readConfigSync(configPath) {
   let result = {};
   if (fs.existsSync(configPath)) {
-    result = fs.readJsonSync(configPath);
+    if (/\.(j|t)s$/.test(configPath)) {
+      const { code } = transformFileSync(configPath, {
+        presets: ['@babel/preset-env', '@babel/preset-typescript'],
+      });
+      const config = new module.constructor();
+      config._compile(code, 'ahaha');
+      result = config.exports.default ? config.exports.default : config.exports;
+    } else {
+      result = fs.readJsonSync(configPath);
+    }
   }
   return result;
 }
