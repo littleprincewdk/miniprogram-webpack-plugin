@@ -27,6 +27,7 @@ module.exports = {
     filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
     publicPath: '',
+    // publicPath: 'https://example.com/',
     globalObject: 'wx',
   },
   devtool: 'source-map',
@@ -54,6 +55,7 @@ module.exports = {
                   path.relative(path.join(__dirname, 'src'), context.context).split('/').length,
                 );
               },
+              // publicPath: 'https://example.com/',
             },
           },
           {
@@ -134,6 +136,7 @@ module.exports = {
             loader: 'file-loader',
             options: {
               name: '[path][name].[ext]',
+              // name: 'images/[name]-[contenthash:16].[ext]',
             },
           },
           {

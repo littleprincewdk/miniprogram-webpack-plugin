@@ -11,5 +11,5 @@
     <text class="user-motto">{{motto}}</text>
   </view>
   <button bindtap="goToSubList">go to subPackages</button>
-  <image src="../../images/webpack.png" style="width: 100px; height: 100px" mode="aspectFit" />
+  <image src="./webpack.png" style="width: 100px; height: 100px" mode="aspectFit" />
 </view>

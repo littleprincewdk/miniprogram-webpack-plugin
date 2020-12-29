@@ -184,7 +184,7 @@ module.exports = class MiniprogramWebpackPlugin {
   }
 
   splitSubPackagesChunks() {
-    const { subpackages, subPackages = subpackages } = this.appConfig;
+    const { subpackages = [], subPackages = subpackages } = this.appConfig;
     subPackages.forEach(item => {
       const commonChunkName = item.root.replace('/', '-');
       this.compiler.options.optimization.splitChunks.cacheGroups[commonChunkName] = {
