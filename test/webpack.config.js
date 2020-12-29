@@ -2,20 +2,28 @@ const path = require('path');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const MiniprogramWebpackPlugin = require('../src');
 
-// function recursiveIssuer(m) {
-//   if (m.issuer) {
-//     return recursiveIssuer(m.issuer);
-//   }
+function fileLoader(name = '[path][name].[ext]') {
+  return {
+    loader: 'file-loader',
+    options: {
+      name,
+    },
+  };
+}
 
-//   const chunks = m.getChunks();
-//   // For webpack@4 chunks = m._chunks
-
-//   for (const chunk of chunks) {
-//     return chunk.name;
-//   }
-
-//   return false;
-// }
+function extractLoader() {
+  return {
+    loader: 'extract-loader',
+    options: {
+      publicPath: context => {
+        return '../'.repeat(
+          path.relative(path.join(__dirname, 'src'), context.context).split('/').length,
+        );
+      },
+      // publicPath: 'https://example.com/',
+    },
+  };
+}
 
 module.exports = {
   mode: 'development',
@@ -33,31 +41,37 @@ module.exports = {
   devtool: 'source-map',
   module: {
     rules: [
+      // {
+      //   test: /\.wxml\.ts$/,
+      //   use: [
+      //     fileLoader(),
+      //     extractLoader(),
+      //     {
+      //       loader: 'babel-loader',
+      //       options: {
+      //         presets: ['@babel/preset-env', '@babel/preset-typescript'],
+      //       },
+      //     },
+      //   ],
+      //   exclude: /node_modules/,
+      // },
       {
-        test: /\.ts?$/,
-        use: 'ts-loader',
+        test: /\.ts$/,
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env', '@babel/preset-typescript'],
+            },
+          },
+        ],
         exclude: /node_modules/,
       },
       {
         test: /\.wxml$/,
         use: [
-          {
-            loader: 'file-loader',
-            options: {
-              name: '[path][name].[ext]',
-            },
-          },
-          {
-            loader: 'extract-loader',
-            options: {
-              publicPath: context => {
-                return '../'.repeat(
-                  path.relative(path.join(__dirname, 'src'), context.context).split('/').length,
-                );
-              },
-              // publicPath: 'https://example.com/',
-            },
-          },
+          fileLoader(),
+          extractLoader(),
           {
             loader: 'html-loader',
             options: {
@@ -83,12 +97,7 @@ module.exports = {
       {
         test: /\.wxss$/,
         use: [
-          {
-            loader: 'file-loader',
-            options: {
-              name: '[path][name].[ext]',
-            },
-          },
+          fileLoader(),
           'extract-loader',
           {
             loader: 'css-loader',
@@ -101,12 +110,7 @@ module.exports = {
       {
         test: /\.less$/,
         use: [
-          {
-            loader: 'file-loader',
-            options: {
-              name: '[path][name].[ext]',
-            },
-          },
+          fileLoader(),
           'extract-loader',
           {
             loader: 'css-loader',
@@ -120,25 +124,13 @@ module.exports = {
       },
       {
         test: /\.wxs$/,
-        use: [
-          {
-            loader: 'file-loader',
-            options: {
-              name: '[path][name].[ext]',
-            },
-          },
-        ],
+        use: [fileLoader()],
       },
       {
         test: /\.(png|jpe?g|gif)$/,
         use: [
-          {
-            loader: 'file-loader',
-            options: {
-              name: '[path][name].[ext]',
-              // name: 'images/[name]-[contenthash:16].[ext]',
-            },
-          },
+          fileLoader(),
+          // name: 'images/[name]-[contenthash:16].[ext]',
           {
             loader: 'image-webpack-loader',
             options: {},
@@ -155,6 +147,7 @@ module.exports = {
     new MiniprogramWebpackPlugin({
       extensions: {
         style: ['.less', '.wxss'],
+        // template: ['.wxml.ts', '.wxml'],
       },
     }),
   ],
