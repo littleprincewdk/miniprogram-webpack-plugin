@@ -4,6 +4,7 @@ const path = require('path');
 const defaults = require('lodash/defaults');
 const EntryDependency = require('webpack/lib/dependencies/EntryDependency');
 const { merge } = require('webpack-merge');
+const CssUrlRelativePlugin = require('./css-url-relative-plugin');
 const {
   NODE_MODULES_REG,
   fsExists,
@@ -169,6 +170,8 @@ module.exports = class MiniprogramWebpackPlugin {
         },
       },
     });
+
+    options.plugins.push(new CssUrlRelativePlugin());
   }
 
   startup() {

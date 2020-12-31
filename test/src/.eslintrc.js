@@ -19,6 +19,16 @@ module.exports = {
       },
     ],
   },
+  settings: {
+    'import/resolver': {
+      'eslint-import-resolver-custom-alias': {
+        alias: {
+          '@': './test/src',
+        },
+        extensions: ['.js', '.ts'],
+      },
+    },
+  },
   overrides: [
     {
       files: ['./**/*.ts'],

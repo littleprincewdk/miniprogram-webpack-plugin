@@ -8,5 +8,11 @@
       "./node_modules/@types",
       "./node_modules/miniprogram-api-typings"
     ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./test/src/*"
+      ],
+    }
   }
 }

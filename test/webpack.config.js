@@ -96,16 +96,7 @@ module.exports = {
       },
       {
         test: /\.wxss$/,
-        use: [
-          fileLoader(),
-          'extract-loader',
-          {
-            loader: 'css-loader',
-            options: {
-              import: false,
-            },
-          },
-        ],
+        use: [fileLoader(), 'extract-loader', 'css-loader'],
       },
       {
         test: /\.less$/,
@@ -141,6 +132,9 @@ module.exports = {
   },
   resolve: {
     extensions: ['.ts', '.js'],
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
   },
   plugins: [
     new CleanWebpackPlugin(),
