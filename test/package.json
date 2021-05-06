@@ -1,0 +1,10 @@
+{
+  "name": "miniprogram-webpack-plugin-test",
+  "version": "0.0.1",
+  "description": "",
+  "main": "webpack.config.js",
+  "scripts": {},
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {}
+}

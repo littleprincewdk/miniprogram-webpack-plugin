@@ -1,53 +1,108 @@
 const path = require('path');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const MiniprogramWebpackPlugin = require('../src');
 
-// function recursiveIssuer(m) {
-//   if (m.issuer) {
-//     return recursiveIssuer(m.issuer);
-//   }
+function fileLoader(name = '[path][name].[ext]') {
+  return {
+    loader: 'file-loader',
+    options: {
+      name,
+    },
+  };
+}
 
-//   const chunks = m.getChunks();
-//   // For webpack@4 chunks = m._chunks
-
-//   for (const chunk of chunks) {
-//     return chunk.name;
-//   }
-
-//   return false;
-// }
+function extractLoader() {
+  return {
+    loader: 'extract-loader',
+    options: {
+      publicPath: context => {
+        return '../'.repeat(
+          path.relative(path.join(__dirname, 'src'), context.context).split('/').length,
+        );
+      },
+      // publicPath: 'https://example.com/',
+    },
+  };
+}
 
 module.exports = {
-  mode: 'development',
+  mode: process.env.NODE_ENV,
   context: path.resolve(__dirname, 'src'),
   entry: {
-    app: './app.js',
+    app: './app.ts',
   },
   output: {
     filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
     publicPath: '',
+    // publicPath: 'https://example.com/',
     globalObject: 'wx',
   },
   devtool: 'source-map',
   module: {
     rules: [
+      // {
+      //   test: /\.wxml\.ts$/,
+      //   use: [
+      //     fileLoader(),
+      //     extractLoader(),
+      //     {
+      //       loader: 'babel-loader',
+      //       options: {
+      //         presets: ['@babel/preset-env', '@babel/preset-typescript'],
+      //       },
+      //     },
+      //   ],
+      //   exclude: /node_modules/,
+      // },
+      {
+        test: /\.ts$/,
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env', '@babel/preset-typescript'],
+            },
+          },
+        ],
+        exclude: /node_modules/,
+      },
       {
         test: /\.wxml$/,
         use: [
+          fileLoader(),
+          extractLoader(),
           {
-            loader: 'file-loader',
+            loader: 'html-loader',
             options: {
-              name: '[path][name].[ext]',
+              attributes: {
+                list: ['wxs', 'image', 'audio', 'video']
+                  .map(tag => ({
+                    tag,
+                    attribute: 'src',
+                    type: 'src',
+                  }))
+                  .concat([
+                    {
+                      tag: 'video',
+                      attribute: 'poster',
+                      type: 'src',
+                    },
+                  ]),
+              },
             },
           },
         ],
       },
       {
         test: /\.wxss$/,
+        use: [fileLoader(), 'extract-loader', 'css-loader'],
+      },
+      {
+        test: /\.less$/,
         use: [
-          MiniCssExtractPlugin.loader,
+          fileLoader(),
+          'extract-loader',
           {
             loader: 'css-loader',
             options: {
@@ -59,14 +114,14 @@ module.exports = {
         ],
       },
       {
+        test: /\.wxs$/,
+        use: [fileLoader()],
+      },
+      {
         test: /\.(png|jpe?g|gif)$/,
         use: [
-          {
-            loader: 'file-loader',
-            options: {
-              name: '[path][name].[ext]',
-            },
-          },
+          fileLoader(),
+          // name: 'images/[name]-[contenthash:16].[ext]',
           {
             loader: 'image-webpack-loader',
             options: {},
@@ -75,11 +130,21 @@ module.exports = {
       },
     ],
   },
+  resolve: {
+    extensions: ['.ts', '.js'],
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
   plugins: [
     new CleanWebpackPlugin(),
-    new MiniprogramWebpackPlugin(),
-    new MiniCssExtractPlugin({
-      filename: '[name]',
+    new MiniprogramWebpackPlugin({
+      projectConfigPath: 'project.config.ts',
+      extensions: {
+        config: ['.config.ts', '.json'],
+        // template: ['.wxml.ts', '.wxml'],
+        style: ['.less', '.wxss'],
+      },
     }),
   ],
 };

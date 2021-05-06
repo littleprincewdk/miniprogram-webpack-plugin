@@ -1,10 +1,10 @@
-export function formatNumber(n) {
+export function formatNumber(num: number): string {
   // eslint-disable-next-line no-param-reassign
-  n = n.toString();
+  const n = num.toString();
   return n[1] ? n : `0${n}`;
 }
 
-export function formatTime(date) {
+export function formatTime(date: Date): string {
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
   const day = date.getDate();

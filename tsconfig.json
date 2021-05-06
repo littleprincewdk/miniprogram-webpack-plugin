@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "es6",
+    "target": "es5",
+    "moduleResolution": "node",
+    "jsx": "react-native",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./node_modules/miniprogram-api-typings"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./test/src/*"
+      ],
+    }
+  }
+}
